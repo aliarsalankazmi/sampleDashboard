@@ -1,0 +1,42 @@
+######################## Code to generate toy dataset
+
+
+earnPtsRange <- 12000:18000
+earnCountRange <- 1000:10000
+redemPtsRange <- 10000:20000
+redemCountRange <- 10000:20000
+churnRange <- 1000:10000
+acquisitionRange <- 800:15000
+
+
+
+### obtained from Dirk Eddelbuettel: http://stackoverflow.com/questions/14720983/efficiently-generate-a-random-sample-of-times-and-dates-between-two-dates
+generateDates <- function(N, st="2014/01/01", et="2015/03/31") {
+st <- as.POSIXct(as.Date(st))
+et <- as.POSIXct(as.Date(et))
+dt <- as.numeric(difftime(et,st,unit="sec"))
+ev <- sort(runif(N, 0, dt))
+rt <- st + ev
+rt[order(rt)]
+as.Date(rt)
+}
+
+
+## generate data
+dateValues <- generateDates(135)
+earnPts <- sample(x = earnPtsRange, size = 135)
+earnCount <- sample(x = earnCountRange, size = 135)
+redemPts <- sample(x = redemPtsRange, size = 135)
+redemCount <- sample(x = redemCountRange, size = 135)
+churnCount <- sample(x = churnRange, size = 135)
+acquisCount <- sample(x = acquisitionRange, size = 135)
+
+
+## merge the generated data
+toyData <- data.frame(dateValues = dateValues, earnPts = earnPts, earnCount = earnCount, redemPts = redemPts, redemCount = redemCount, churnCount = churnCount, 
+acquisCount = acquisCount)
+
+
+## write the data to a CSV file
+write.csv(x = toyData, file = './toyDataset.csv', row.names = FALSE)
+
