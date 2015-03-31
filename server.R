@@ -21,24 +21,22 @@ mainImgPath <- './img/aimia_mainImg.jpg'
 shinyServer(function(input, output, session) {
 
 
-toyData <- reactive({
-		mainFileInfo <- input$mainFile
-		uploadedData <- read.csv(mainFileInfo$datapath, header = TRUE, stringsAsFactors = FALSE)
-		uploadedData$yearmonth <- as.Date(uploadedData$yearmonth, '%d/%m/%Y')
-		return(uploadedData)
-})
-
 dataList <- reactive({
-		toyData<- tbl_df(toyData) %>% 
+		mainFileInfo <- input$mainFile
+		uploadData <- read.csv(mainFileInfo$datapath, header = TRUE, stringsAsFactors = FALSE)
+		uploadData$yearmonth <- as.Date(uploadData$yearmonth, '%d/%m/%Y')
+
+		uploadedData <- tbl_df(uploadData) %>% 
 				mutate(yearValue = year(dateValues), monthValue = month(dateValues))
-		sumData1 <- toyData %>% 
+
+		sumData1 <- uploadedData %>% 
 			select(yearValue, earnPts, earnCount, redemPts, redemCount, churnCount, acquisCount) %>% 
 			gather(metrics, totals, -yearValue) %>%
 			group_by(yearValue, metrics) %>%
 			summarise(yearlyTotals = sum(totals)) %>%
 			arrange(yearlyTotals)
 
-		sumData2 <- toyData %>%  
+		sumData2 <- uploadedData %>%  
 			select(yearValue, monthValue, earnPts, earnCount, redemPts, redemCount, churnCount, acquisCount) %>%
 			gather(metrics, totals, -c(yearValue, monthValue)) %>%
 			group_by(yearValue, monthValue, metrics) %>%
@@ -47,13 +45,13 @@ dataList <- reactive({
 			group_by(yearValue, metrics) %>%
 			mutate(cumulatives = cumsum(yearmonthTotals))
 
-		sumData3 <- toyData %>% 
+		sumData3 <- uploadedData %>% 
 			select(yearValue, monthValue, earnPts, earnCount, redemPts, redemCount, churnCount, acquisCount) %>%
 			group_by(yearValue, monthValue) %>%
 			summarise_each(funs(mean)) %>% 
 			round()
 
-		sumData4 <- toyData %>% 
+		sumData4 <- uploadedData %>% 
 			group_by(dateValues) %>%
 			summarise_each(funs(sum))
 
@@ -69,11 +67,11 @@ dataList <- reactive({
 			select(churnCount, acquisCount)
 		row.names(earnData) <- sumData4$dateValues
 
+		dfList <- list(sumData1 = sumData1, sumData2 = sumData2, sumData3 = sumData3,
+				   sumData4 = sumData4, earnData = earnData, redempData = redempData,
+				   custData = custData)
 
-output$mainImg <- renderImage({
-			expr = list(src = mainImgPath)
-			}, deleteFile = FALSE)
-
-output$imgPath <- renderPrint({mainImgPath})
+		return(dfList)
+})
 
 })
