@@ -1,21 +1,27 @@
-#
-#
-# load libraries, scripts, data
+
+##### load libraries
 
 library(shiny)
-library(shinyapps)
+library(shinythemes)
 library(shinydashboard)
 library(dplyr)
 library(tidyr)
 library(lubridate)
 library(htmlwidgets)
+library(rCharts)
+library(dygraphs)
 
 options(shiny.trace = TRUE,
 	  shiny.maxRequestSize=300*1024^2)
 
 
 
-## body of shiny server side program
+
+##### Body of shiny server side program
+
+
+#### For Overview Section
+
 
 shinyServer(function(input, output, session) {
 
@@ -97,6 +103,7 @@ dataList <- reactive({
 ### The main chart
 
 output$outlinesChart <- renderChart2({
+	if(!dataList()){return (rCharts$new())}
 	myData <- dataList()$sumData1
 	mainPlot <- nPlot(yearlyTotals ~ metrics, 
 			  group = 'yearValue', data = myData, type = 'multiBarChart')
@@ -228,6 +235,76 @@ output$cChurnChart <- renderChart2({
 	rm(interimData)
 	return(myPlot)
 })
+
+
+
+
+#### For Details Section
+
+
+### Main chart
+
+gcDataSource <- reactive({
+	filteredData <- gcData %>% filter(dates == input$userDate)
+	filteredData
+})
+
+
+output$gChart <- reactive({
+    list(data = googleDataTable(gcDataSource()),
+      	 options = list(title = 'Google Automated Chart',series = series)
+    )
+})
+
+
+
+
+
+### Earn points - detail chart
+
+output$earnDetails <- renderDygraph({
+	data_v1 <- sampleData %>% 
+				select(dates, product, earn) %>% 
+				spread(product, earn)
+	data_v2 <- data_v1 %>% 
+				select(-dates)
+	row.names(data_v2) <- data_v1$dates
+    	dygraph(data_v2)
+})
+
+
+output$redempDetails <- renderDygraph({
+	data_v1 <- sampleData %>% 
+				select(dates, product, redemptions) %>% 
+				spread(product, redemptions)
+	data_v2 <- data_v1 %>% 
+				select(-dates)
+	row.names(data_v2) <- data_v1$dates
+    	dygraph(data_v2)
+})
+
+
+output$cBaseDetails <- renderDygraph({
+	data_v1 <- sampleData %>% 
+				select(dates, product, customerBase) %>% 
+				spread(product, customerBase)
+	data_v2 <- data_v1 %>% 
+				select(-dates)
+	row.names(data_v2) <- data_v1$dates
+    	dygraph(data_v2)
+})
+
+
+output$churnDetails <- renderDygraph({
+	data_v1 <- sampleData %>% 
+				select(dates, product, churn) %>% 
+				spread(product, churn)
+	data_v2 <- data_v1 %>% 
+				select(-dates)
+	row.names(data_v2) <- data_v1$dates
+    	dygraph(data_v2)
+})
+
 
 
 })
